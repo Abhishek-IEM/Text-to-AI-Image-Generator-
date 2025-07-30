@@ -2,7 +2,7 @@
 
 Turn your imagination into visuals using AI! This is a full-stack web application where users can enter text prompts to generate AI-powered images using the [Clipdrop API](https://clipdrop.co/apis). The app is built with the MERN stack and deployed on Render.
 
-🔗 **Live Demo**: [text-to-ai-image-generator.onrender.com](https://text-to-ai-image-generator.onrender.com)
+🔗 **Live Demo**: https://text-to-ai-image-generator.onrender.com/
 
 ---
 
