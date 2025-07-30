@@ -10,7 +10,12 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: ["https://text-to-ai-image-generator.onrender.com"], 
+    credentials: true,
+  })
+);
 await connectDB();
 
 app.use("/api/user", userRouter);
