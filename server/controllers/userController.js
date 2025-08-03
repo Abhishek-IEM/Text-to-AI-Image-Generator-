@@ -159,30 +159,56 @@ const paymentRazorpay = async (req, res) => {
 const verifyRazorpay = async (req, res) => {
   try {
     const { razorpay_order_id } = req.body;
+
+    if (!razorpay_order_id) {
+      return res.json({ success: false, message: "Missing Razorpay Order ID" });
+    }
+
+    // 1. Fetch Razorpay order info
     const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
 
-    if (orderInfo.status === "paid") {
-      const transactionData = await transactionModel.findById(
-        orderInfo.receipt
-      );
-      if (transactionData.payment) {
-        return res.json({ success: false, message: "Payment Failed" });
-      }
+    if (!orderInfo || !orderInfo.id) {
+      return res.json({ success: false, message: "Invalid Razorpay order" });
+    }
 
+    // 2. Fetch transaction using razorpayOrderId
+    const transactionData = await transactionModel.findOne({
+      razorpayOrderId: orderInfo.id,
+    });
+
+    if (!transactionData) {
+      return res.json({ success: false, message: "Transaction not found" });
+    }
+
+    if (transactionData.payment) {
+      return res.json({ success: false, message: "Payment already processed" });
+    }
+
+    // 3. Verify payment status
+    if (orderInfo.status === "paid") {
       const userData = await userModel.findById(transactionData.userId);
 
-      const creditBalance = userData.creditBalance + transactionData.credits;
-      await userModel.findByIdAndUpdate(userData._id, { creditBalance });
+      if (!userData) {
+        return res.json({ success: false, message: "User not found" });
+      }
+
+      const updatedCredits = userData.creditBalance + transactionData.credits;
+
+      // 4. Update user credits and transaction payment status
+      await userModel.findByIdAndUpdate(userData._id, {
+        creditBalance: updatedCredits,
+      });
       await transactionModel.findByIdAndUpdate(transactionData._id, {
         payment: true,
       });
-      res.json({ success: true, message: "Credits Added" });
+
+      return res.json({ success: true, message: "Credits added successfully" });
     } else {
-      res.json({ success: false, message: "Payment Failed" });
+      return res.json({ success: false, message: "Payment not completed yet" });
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Razorpay Verification Error:", error);
+    return res.json({ success: false, message: error.message });
   }
 };
 
