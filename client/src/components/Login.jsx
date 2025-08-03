@@ -28,6 +28,7 @@ const Login = () => {
           setToken(data.token);
           setUser(data.user);
           localStorage.setItem("token", data.token);
+          localStorage.setItem("userId", data.user._id); 
           setShowLogin(false);
         } else {
           toast.error(data.message);
@@ -43,6 +44,7 @@ const Login = () => {
           setToken(data.token);
           setUser(data.user);
           localStorage.setItem("token", data.token);
+          localStorage.setItem("userId", data.user._id);
           setShowLogin(false);
         } else {
           toast.error(data.message);
