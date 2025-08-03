@@ -12,8 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: ["https://text-to-ai-image-generator.onrender.com"], 
-    credentials: true,
+    origin: ["https://text-to-ai-image-generator.onrender.com"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 await connectDB();
