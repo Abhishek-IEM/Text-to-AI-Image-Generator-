@@ -93,7 +93,7 @@ const razorpayInstance = new Razorpay({
 
 const paymentRazorpay = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { planId } = req.body;
 
     const userData = await userModel.findById(userId);
@@ -148,6 +148,8 @@ const paymentRazorpay = async (req, res) => {
       };
 
       await transactionModel.create(transactionData);
+
+      console.log("Razorpay Order:", order);
 
       return res.json({ success: true, order });
     });
