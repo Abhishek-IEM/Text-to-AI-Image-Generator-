@@ -93,65 +93,67 @@ const razorpayInstance = new Razorpay({
 
 const paymentRazorpay = async (req, res) => {
   try {
-    const { userId, planId } = req.body;
-    const userData = await userModel.findById(userId);
+    const { planId } = req.body;
+    const userId = req.userId;
 
-    if (!userData || !planId) {
+    if (!userId || !planId) {
       return res.json({ success: false, message: "Missing Details" });
     }
 
-    // creating options for razorpay payment
-    let credits, plan, amount, date;
+    const userData = await userModel.findById(userId);
+    if (!userData) {
+      return res.json({ success: false, message: "User not found." });
+    }
+
+    let credits, plan, amount;
 
     switch (planId) {
       case "Basic":
         plan = "Basic";
-        credits = 25;
-        amount = 10;
+        credits = 15;
+        amount = 20;
         break;
       case "Advanced":
         plan = "Advanced";
-        credits = 70;
-        amount = 30;
-        break;
-      case "Premier":
-        plan = "Premier";
-        credits = 150;
+        credits = 50;
         amount = 50;
         break;
-
+      case "Premium":
+        plan = "Premium";
+        credits = 120;
+        amount = 100;
+        break;
       default:
-        return res.json({ success: false, message: "plan not found" });
+        return res.json({ success: false, message: "Plan not found!" });
     }
 
-    date = Date.now();
-
-    const transactionData = {
+    const date = Date.now();
+    const transactionData = await transactionModel.create({
       userId,
       plan,
       amount,
       credits,
       date,
-    };
-
-    const newTransaction = await transactionModel.create(transactionData);
+    });
 
     const options = {
-      amount: amount * 100,
-      currency: process.env.CURRENCY,
-      receipt: newTransaction._id,
+      amount: amount * 100, // in paise
+      currency: process.env.CURRENCY || "INR",
+      receipt: transactionData._id.toString(),
     };
 
-    await razorpayInstance.orders.create(options, (error, order) => {
-      if (error) {
-        console.log(error);
-        return res.json({ success: false, message: error });
-      }
-      res.json({ success: true, order });
+    // ✅ Use Promise wrapper instead of callback
+    const order = await new Promise((resolve, reject) => {
+      razorpayInstance.orders.create(options, (error, order) => {
+        if (error) return reject(error);
+        resolve(order);
+      });
     });
+
+    return res.json({ success: true, order });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.log("Error in /pay-razor:", error);
+    return res.json({ success: false, message: error.message });
   }
 };
 
