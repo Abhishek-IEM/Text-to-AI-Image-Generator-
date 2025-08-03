@@ -134,6 +134,7 @@ const paymentRazorpay = async (req, res) => {
       amount,
       credits,
       date,
+      razorpay_order_id: "",
     });
 
     const options = {
@@ -155,6 +156,8 @@ const paymentRazorpay = async (req, res) => {
         resolve(order);
       });
     });
+    transactionData.razorpayOrderId = order.id;
+    await transactionData.save();
   } catch (error) {
     console.log("Error in /pay-razor:", error);
     return res.json({ success: false, message: error.message });
@@ -177,7 +180,7 @@ const verifyRazorpay = async (req, res) => {
 
     if (expectedSignature === razorpay_signature) {
       const transaction = await transactionModel.findOneAndUpdate(
-        { razorpay_order_id },
+        { razorpayOrderId: razorpay_order_id },
         { payment: true }
       );
 
