@@ -144,13 +144,17 @@ const paymentRazorpay = async (req, res) => {
 
     // ✅ Use Promise wrapper instead of callback
     const order = await new Promise((resolve, reject) => {
-      razorpayInstance.orders.create(options, (error, order) => {
+      razorpayInstance.orders.create(options, async (error, order) => {
         if (error) return reject(error);
+
+        // Save Razorpay order ID to transaction
+        await transactionModel.findByIdAndUpdate(transactionData._id, {
+          razorpay_order_id: order.id,
+        });
+
         resolve(order);
       });
     });
-
-    return res.json({ success: true, order });
   } catch (error) {
     console.log("Error in /pay-razor:", error);
     return res.json({ success: false, message: error.message });
@@ -161,7 +165,8 @@ const paymentRazorpay = async (req, res) => {
 
 const verifyRazorpay = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -172,7 +177,7 @@ const verifyRazorpay = async (req, res) => {
 
     if (expectedSignature === razorpay_signature) {
       const transaction = await transactionModel.findOneAndUpdate(
-        { _id: razorpay_order_id },
+        { razorpay_order_id },
         { payment: true }
       );
 
@@ -186,10 +191,11 @@ const verifyRazorpay = async (req, res) => {
     }
   } catch (error) {
     console.log("verifyRazorpay error:", error);
-    return res.status(500).json({ success: false, message: "Payment verification failed" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Payment verification failed" });
   }
 };
-
 
 export {
   registerUser,
