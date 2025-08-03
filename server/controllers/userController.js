@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import validator from "validator";
 import Razorpay from "razorpay";
 import transactionModel from "../models/transactionModel.js";
+import crypto from "crypto";
 
 const registerUser = async (req, res) => {
   try {
@@ -158,37 +159,51 @@ const paymentRazorpay = async (req, res) => {
   }
 };
 
+
 const verifyRazorpay = async (req, res) => {
   try {
-    const { razorpay_order_id } = req.body;
-    const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
-    if (orderInfo.status === "paid") {
-      const transactionData = await transactionModel.findById(
-        orderInfo.receipt
-      );
-      if (transactionData.payment) {
-        return res.json({
-          success: false,
-          message: "Payment Failed",
-        });
-      }
-      const userData = await userModel.findById(transactionData.userId);
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
 
-      const creditBalance = userData.creditBalance + transactionData.credits;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
 
-      await userModel.findByIdAndUpdate(userData._id, { creditBalance });
-      await transactionModel.findByIdAndUpdate(transactionData._id, {
-        payment: true,
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (!isAuthentic) {
+      return res.json({
+        success: false,
+        message: "Payment verification failed",
       });
-
-      res.json({ success: true, message: "Credits Added" });
-    } else {
-      res.json({ success: false, message: "Payment Failed" });
     }
+
+    const transaction = await transactionModel.findById(razorpay_order_id); // or use receipt ID if saved
+
+    if (!transaction || transaction.payment) {
+      return res.json({
+        success: false,
+        message: "Invalid or already processed transaction",
+      });
+    }
+
+    const user = await userModel.findById(transaction.userId);
+    user.creditBalance += transaction.credits;
+    await user.save();
+
+    transaction.payment = true;
+    await transaction.save();
+
+    return res.json({
+      success: true,
+      message: "Payment Verified. Credits Added",
+    });
   } catch (error) {
-    console.log(error);
-    return res.json({ success: false, message: error.message });
+    console.error(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
