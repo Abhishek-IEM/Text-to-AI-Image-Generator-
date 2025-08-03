@@ -7,7 +7,6 @@ const transactionSchema = new mongoose.Schema({
   credits: { type: Number, required: true },
   payment: { type: Boolean, default: false },
   date: { type: Number },
-  razorpayOrderId: { type: String, required: true },
 });
 
 const transactionModel =
