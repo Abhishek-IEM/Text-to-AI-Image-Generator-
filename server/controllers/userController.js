@@ -93,9 +93,8 @@ const razorpayInstance = new Razorpay({
 
 const paymentRazorpay = async (req, res) => {
   try {
-    const { userId, planId } = req.body;
-    console.log("userId:", userId);
-    console.log("planId:", planId);
+    const userId = req.user.id;
+    const { planId } = req.body;
 
     const userData = await userModel.findById(userId);
 
@@ -116,8 +115,8 @@ const paymentRazorpay = async (req, res) => {
         credits = 30;
         amount = 50;
         break;
-      case "Premier":
-        plan = "Premier";
+      case "Premium":
+        plan = "Premium";
         credits = 70;
         amount = 100;
         break;
