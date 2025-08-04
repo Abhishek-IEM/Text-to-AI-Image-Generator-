@@ -16,7 +16,10 @@ const registerUser = async (req, res) => {
 
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
-        return res.json({ success: false, message: "User with this email already exists" });
+      return res.json({
+        success: false,
+        message: "User with this email already exists",
+      });
     }
 
     if (!validator.isEmail(email)) {
@@ -66,9 +69,17 @@ const loginUser = async (req, res) => {
 
     if (isMatch) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      res.json({ success: true, token });
+      return res.json({
+        success: true,
+        token,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+      });
     } else {
-      res.json({ success: false, message: "Invalid credentials" });
+      return res.json({ success: false, message: "Invalid credentials" });
     }
   } catch (error) {
     console.log(error);
@@ -168,7 +179,8 @@ const paymentRazorpay = async (req, res) => {
 // API to verify payment of razorpay - Corrected with signature verification
 const verifyRazorpay = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
     // A. Check for all required fields
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -184,10 +196,13 @@ const verifyRazorpay = async (req, res) => {
     // C. Verify the signature
     if (generatedSignature !== razorpay_signature) {
       console.log("Signature verification failed.");
-      return res.json({ success: false, message: "Payment verification failed" });
+      return res.json({
+        success: false,
+        message: "Payment verification failed",
+      });
     }
     console.log("Signature verification successful.");
-    
+
     // D. Find and update the transaction
     const transactionData = await transactionModel.findOne({
       razorpayOrderId: razorpay_order_id,
@@ -199,7 +214,10 @@ const verifyRazorpay = async (req, res) => {
     }
 
     if (transactionData.payment) {
-      console.log("Payment already processed for transaction ID:", transactionData._id);
+      console.log(
+        "Payment already processed for transaction ID:",
+        transactionData._id
+      );
       return res.json({ success: false, message: "Payment already processed" });
     }
 
@@ -226,7 +244,10 @@ const verifyRazorpay = async (req, res) => {
     return res.json({ success: true, message: "Credits added successfully" });
   } catch (error) {
     console.error("Razorpay Verification Error:", error);
-    return res.json({ success: false, message: "An error occurred during verification" });
+    return res.json({
+      success: false,
+      message: "An error occurred during verification",
+    });
   }
 };
 

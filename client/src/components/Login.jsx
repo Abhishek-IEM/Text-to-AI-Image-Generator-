@@ -44,7 +44,12 @@ const Login = () => {
           setToken(data.token);
           setUser(data.user);
           localStorage.setItem("token", data.token);
-          localStorage.setItem("userId", data.user._id);
+          if (data.user && data.user._id) {
+            localStorage.setItem("userId", data.user._id);
+          } else {
+            toast.error("Login failed: Invalid user data");
+          }
+
           setShowLogin(false);
           toast.success("Logged in successfully");
         } else {
