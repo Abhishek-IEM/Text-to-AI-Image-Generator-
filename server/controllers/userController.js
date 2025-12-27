@@ -5,7 +5,7 @@ import validator from "validator";
 import Razorpay from "razorpay";
 import transactionModel from "../models/transactionModel.js";
 import crypto from "crypto";
-import mongoose from "mongoose"; // Added missing mongoose import
+import mongoose from "mongoose"; 
 
 const registerUser = async (req, res) => {
   try {
@@ -43,13 +43,23 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      creditBalance: 5, 
     };
 
     const newUser = new userModel(userData);
     const user = await newUser.save();
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-    res.json({ success: true, token, user: { name: user.name } });
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      creditBalance: user.creditBalance, 
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -77,6 +87,7 @@ const loginUser = async (req, res) => {
           name: user.name,
           email: user.email,
         },
+         creditBalance: user.creditBalance,
       });
     } else {
       return res.json({ success: false, message: "Invalid credentials" });

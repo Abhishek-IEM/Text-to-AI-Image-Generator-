@@ -57,15 +57,21 @@ const AppContextProvider = (props) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+     localStorage.removeItem("userInfo"); 
     setToken("");
     setUser(null);
   };
 
   useEffect(() => {
-    if (token) {
-      loadCreditsData();
+  if (token) {
+    const storedUser = localStorage.getItem("userInfo");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser)); 
+    } else {
+      loadCreditsData();  
     }
-  }, [token]);
+  }
+}, [token]);
 
   const value = {
     user,

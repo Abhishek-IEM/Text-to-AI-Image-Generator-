@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 
 const Login = () => {
   const [state, setState] = useState("Login");
-  const { setShowLogin, backendUrl, setToken, setUser } =
+  const { setShowLogin, backendUrl, setToken, setUser, setCredit } =
     useContext(AppContext);
 
   const [name, setName] = useState("");
@@ -25,10 +25,16 @@ const Login = () => {
         });
 
         if (data.success) {
+          localStorage.setItem("token", data.token);
           setToken(data.token);
           setUser(data.user);
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("userId", data.user._id);
+
+          if (data.creditBalance !== undefined) {
+            setCredit(data.creditBalance); 
+            localStorage.setItem("credits", data.creditBalance); 
+          }
+
+          toast.success("Logged in successfully");
           setShowLogin(false);
         } else {
           toast.error(data.message);
@@ -41,33 +47,24 @@ const Login = () => {
         });
 
         if (data.success) {
-          setToken(data.token);
-          setUser(data.user);
-          localStorage.setItem("token", data.token);
-          if (data.user && data.user._id) {
-            localStorage.setItem("userId", data.user._id);
-          } else {
-            toast.error("Login failed: Invalid user data");
-          }
-
-          setShowLogin(false);
-          toast.success("Logged in successfully");
+          toast.success("Account created. Please log in.");
+          setState("Login");
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
     }
   };
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = "unset";
     };
   }, []);
+
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 backdrop-blur-sm bg-black/30 flex justify-center items-center">
       <motion.form
